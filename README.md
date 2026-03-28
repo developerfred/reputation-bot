@@ -1,123 +1,106 @@
 # GitHub Reputation Bot
 
-Bot that posts reputation comments on PRs and issues for archestra-ai/archestra. Automatically closes pull requests from users with very low reputation scores to maintain code quality.
+Bot que calcula e exibe reputação de contribuidores em PRs e issues. PRs de usuários com reputação baixa são automaticamente fechados.
 
-## Features
+## Características
 
-- **Reputation Tracking**: Calculates and displays user reputation on PRs and issues
-- **Automatic PR Closing**: Closes PRs from users with reputation below the configured threshold
-- **Clickable Statistics**: All counts (PRs, issues, assigned) link to filtered GitHub searches
-- **Smart Updates**: Skips updating comments when no new participants have joined
+- **Reputação Configurável**: Sistema de pontos baseado em atividade GitHub
+- **Auto-Fechamento de PRs**: Fecha automaticamente PRs com score abaixo do threshold
+- **Links Diretos**: Todas as estatísticas linkam para buscas filtradas no GitHub
+- **Smart Updates**: Só atualiza comments quando há novos participantes
+- **100% Configurável**: Funciona com qualquer repositório via env vars
 
-## Reputation Scoring
+## Sistema de Pontos
 
-The bot calculates reputation scores based on GitHub activity. **Note: Scores can be negative.**
+| Ação | Pontos |
+|------|--------|
+| PR Merged | +20 |
+| PR Aberto | +3 |
+| PR Fechado (sem merge) | -10 |
+| Issue Criado | +5 |
+| Reactions positivas do Core | +15 |
+| Reactions negativas do Core | -50 |
 
-### Points System
-- **Merged PRs**: +20 points
-- **Open PRs**: +3 points  
-- **Closed PRs**: -10 points (PRs closed without merging)
-- **Issues created**: +5 points
-- **Comments**: Displayed for context but don't affect score
-- **Core team 👍**: +15 points (reactions on issues/PRs authored by the user)
-- **Core team 👎**: -50 points (reactions on issues/PRs authored by the user)
+> **Nota**: Scores podem ser negativos!
 
-### Automatic PR Closing
-Pull requests from users with reputation below the threshold (default: -80) are automatically closed with an explanatory comment. This helps maintain code quality by preventing spam from users with poor contribution history.
+## Configuração
 
-### Core Team Reactions
-Core team members' reactions carry significant weight. The bot tracks thumbs up (👍) and thumbs down (👎) reactions from designated core team members on issues and pull requests created by users. These reactions are only counted on the main issue/PR body, not on comments within them.
+### Environment Variables
 
-## Deployment to Google Cloud Run
-
-### 1. Prerequisites
-
-Install Google Cloud CLI and authenticate:
 ```bash
-gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
+# Obrigatórios
+GITHUB_TOKEN=ghp_xxxxxxxxxxxxx          # Personal Access Token
+GITHUB_WEBHOOK_SECRET=your-secret        # Para verificar webhooks
 
-# Enable required services
-gcloud services enable cloudbuild.googleapis.com container.googleapis.com run.googleapis.com
-
-# Configure Docker authentication for GCR
-gcloud auth configure-docker
+# Opcionais (com defaults)
+REPO_NAME=owner/repo                     # Repositório monitorado
+CORE_TEAM_MEMBERS=user1,user2            # Lista de membros core
+REPUTATION_THRESHOLD=-80                 # Threshold para auto-fechar
+BOT_NAME=Reputation Bot                  # Nome do bot
+BOT_FOOTER="Gen by [Bot](link)"          # Footer dos comments
 ```
 
-### 2. Build and Deploy
+### GitHub Webhook
+
+Configure no Settings > Webhooks do seu repositório:
+
+- **Payload URL**: `https://your-bot-url/webhook`
+- **Content type**: `application/json`
+- **Secret**: Mesmo valor de `GITHUB_WEBHOOK_SECRET`
+- **Events**: `pull_requests`, `issues`, `issue_comments`
+
+## Deploy (Google Cloud Run)
 
 ```bash
-# Build container for linux/amd64 platform (required for Cloud Run)
-docker build --platform linux/amd64 -t gcr.io/YOUR_PROJECT_ID/reputation-bot .
+# Build
+docker build --platform linux/amd64 -t gcr.io/PROJECT/reputation-bot .
 
-# Push to Google Container Registry
-docker push gcr.io/YOUR_PROJECT_ID/reputation-bot
+# Push
+docker push gcr.io/PROJECT/reputation-bot
 
-# Deploy to Cloud Run
-# Note: Use ^@^ syntax to handle commas in CORE_TEAM_MEMBERS
+# Deploy
 gcloud run deploy reputation-bot \
-  --image gcr.io/YOUR_PROJECT_ID/reputation-bot \
+  --image gcr.io/PROJECT/reputation-bot \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars="^@^GITHUB_TOKEN=YOUR_GITHUB_TOKEN@GITHUB_WEBHOOK_SECRET=YOUR_WEBHOOK_SECRET@CORE_TEAM_MEMBERS=ashlkv,iskhakov,Konstantinov-Innokentii,joeyorlando,brojd,Matvey-Kuk@REPUTATION_THRESHOLD=-80" \
-  --memory 512Mi \
-  --max-instances 1
+  --set-env-vars="^@^GITHUB_TOKEN=TOKEN@GITHUB_WEBHOOK_SECRET=SECRET@CORE_TEAM_MEMBERS=user1@REPO_NAME=owner/repo"
 ```
 
-Note the URL returned (e.g., `https://reputation-bot-xxx.run.app`)
-
-### 3. Configure GitHub Webhook
-
-**Important**: You need admin access to the repository. If you don't have admin access, ask a repository administrator.
-
-1. Go to `https://github.com/archestra-ai/archestra/settings/hooks` (requires admin access)
-2. Click "Add webhook"
-3. Configure:
-   - **Payload URL**: `https://YOUR_CLOUD_RUN_URL/webhook`
-   - **Content type**: `application/json`
-   - **Secret**: Same value as `GITHUB_WEBHOOK_SECRET` env variable
-   - **Events**: Select individual events:
-     - Pull requests
-     - Issues
-     - Issue comments
-4. Click "Add webhook"
-
-### 4. Update Environment Variables
-
-To update configuration after deployment:
-```bash
-gcloud run services update reputation-bot \
-  --region us-central1 \
-  --update-env-vars GITHUB_WEBHOOK_SECRET=your-new-secret
-```
-
-## Environment Variables
-
-- `GITHUB_TOKEN`: GitHub personal access token with repo scope (needs write permissions for closing PRs)
-- `GITHUB_WEBHOOK_SECRET`: Secret for webhook signature verification
-- `CORE_TEAM_MEMBERS`: Comma-separated list of core team GitHub usernames (ashlkv,iskhakov,Konstantinov-Innokentii,joeyorlando,brojd,Matvey-Kuk)
-- `REPUTATION_THRESHOLD`: Minimum reputation score to keep PRs open (default: -80)
-- `PORT`: Automatically set by Cloud Run
-
-## Local Testing
-
-### Build and run with Docker
+## Desenvolvimento Local
 
 ```bash
-# 1. Build the Docker image
-docker build -t reputation-bot .
+# Setup
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
-# 2. Run the container with test environment variables
-docker run -p 8080:8080 \
-  -e GITHUB_TOKEN="your_github_personal_access_token" \
-  -e GITHUB_WEBHOOK_SECRET="test-secret-123" \
-  -e CORE_TEAM_MEMBERS="ashlkv,iskhakov,Konstantinov-Innokentii,joeyorlando,brojd,Matvey-Kuk" \
-  -e PORT=8080 \
-  reputation-bot
+# Run
+export GITHUB_TOKEN=your-token
+export GITHUB_WEBHOOK_SECRET=test-secret
+export CORE_TEAM_MEMBERS=your-username
+export REPO_NAME=owner/repo
+python app.py
 
-# 3. In another terminal, test the webhook
-python3 test_webhook.py
+# Test
+python test_webhook.py
 ```
 
-The `test_webhook.py` script simulates GitHub webhook events for issue #1849 and test PRs.
+## Estrutura do Projeto
+
+```
+reputation-bot/
+├── app.py              # Flask app + webhook handlers
+├── github_client.py    # Cliente GitHub API
+├── reputation.py       # Lógica de pontuação
+├── Dockerfile          # Container
+├── requirements.txt    # Dependências
+├── install.sh          # Script de setup local
+├── deploy.sh           # Script de deploy GCR
+├── .env.example        # Template de variáveis
+└── SKILL.md            # Para OpenCLAW agents
+```
+
+## Para OpenCLAW Agents
+
+Este bot é designed para ser facilmente implementável como skill. Veja `SKILL.md` para instruções.
