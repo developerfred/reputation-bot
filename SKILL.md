@@ -1,34 +1,36 @@
-# GitHub Reputation Bot Skill
+# GitHub Reputation Bot
 
-Template de bot GitHub para calcular e exibir reputação de contribuidores em PRs e issues.
+> Forked from [archestra-ai/reputation-bot](https://github.com/archestra-ai/reputation-bot) - Template repository for easy deployment to any GitHub repository.
 
-## Para OpenCLAW Agents
+## For OpenCLAW Agents
 
-Este é um **template plug-and-play** para adicionar um bot de reputação a qualquer repositório GitHub. Configure via variáveis de ambiente e deploy.
+This is a **plug-and-play template** for adding a reputation bot to any GitHub repository. Configure via environment variables and deploy.
 
-## Configuração (Environment Variables)
+## Configuration (Environment Variables)
 
-| Variável | Descrição | Default |
-|----------|-----------|---------|
-| `REPO_NAME` | Repositório no formato `owner/name` | `archestra-ai/archestra` |
-| `GITHUB_TOKEN` | Personal Access Token GitHub com scope `repo` | **Obrigatório** |
-| `GITHUB_WEBHOOK_SECRET` | Secret para verificar assinaturas do webhook | **Obrigatório** |
-| `CORE_TEAM_MEMBERS` | Lista separada por vírgulas de membros core | (vazio) |
-| `REPUTATION_THRESHOLD` | Score mínimo para manter PR aberto | `-80` |
-| `BOT_NAME` | Nome do bot para exibição | `Reputation Bot` |
-| `BOT_FOOTER` | Footer markdown com link do repo do bot | (auto-gerado) |
-| `PORT` | Porta HTTP | `8080` |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `REPO_NAME` | Repository in `owner/name` format | `archestra-ai/archestra` |
+| `GITHUB_TOKEN` | GitHub Personal Access Token with `repo` scope | **Required** |
+| `GITHUB_WEBHOOK_SECRET` | Secret for webhook signature verification | **Required** |
+| `CORE_TEAM_MEMBERS` | Comma-separated list of core team members | (empty) |
+| `REPUTATION_THRESHOLD` | Minimum score to keep PR open | `-80` |
+| `BOT_NAME` | Bot display name | `Reputation Bot` |
+| `BOT_FOOTER` | Markdown footer with bot repo link | (auto-generated) |
+| `PORT` | HTTP port | `8080` |
 
-## Pontuação
+## Points System
 
-- **PRs Merged**: +20 pontos
-- **PRs Abertos**: +3 pontos
-- **PRs Fechados sem merge**: -10 pontos
-- **Issues criados**: +5 pontos
-- **Reações positivas do Core Team**: +15 pontos
-- **Reações negativas do Core Team**: -50 pontos
+| Action | Points |
+|--------|--------|
+| Merged PRs | +20 |
+| Open PRs | +3 |
+| Closed PRs (without merge) | -10 |
+| Created Issues | +5 |
+| Core Team positive reactions | +15 |
+| Core Team negative reactions | -50 |
 
-## Deploy Rápido (Google Cloud Run)
+## Quick Deploy (Google Cloud Run)
 
 ```bash
 # Build
@@ -45,15 +47,15 @@ gcloud run deploy reputation-bot \
 
 ## Webhook Events
 
-O bot responde a:
+The bot responds to:
 - `pull_request` (opened, reopened)
 - `issues` (opened, reopened)
 - `issue_comment` (created)
 
-## Para Criar Seu Próprio Fork
+## To Create Your Own Fork
 
-1. Clone este repositório
-2. Atualize `REPO_NAME` para seu repositório
-3. Configure as variáveis de ambiente
-4. Deploy com seu token GitHub
-5. Configure o webhook no GitHub apontando para seu endpoint
+1. Clone this repository
+2. Update `REPO_NAME` to your repository
+3. Configure environment variables
+4. Deploy with your GitHub token
+5. Configure GitHub webhook pointing to your endpoint

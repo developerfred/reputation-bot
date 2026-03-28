@@ -1,52 +1,54 @@
 # GitHub Reputation Bot
 
-Bot que calcula e exibe reputação de contribuidores em PRs e issues. PRs de usuários com reputação baixa são automaticamente fechados.
+> **Template Repository**: This is a fork of [archestra-ai/reputation-bot](https://github.com/archestra-ai/reputation-bot) - adapted to be a drop-in template for any GitHub repository.
 
-## Características
+Bot that calculates and displays contributor reputation on PRs and issues. PRs from users with low reputation are automatically closed.
 
-- **Reputação Configurável**: Sistema de pontos baseado em atividade GitHub
-- **Auto-Fechamento de PRs**: Fecha automaticamente PRs com score abaixo do threshold
-- **Links Diretos**: Todas as estatísticas linkam para buscas filtradas no GitHub
-- **Smart Updates**: Só atualiza comments quando há novos participantes
-- **100% Configurável**: Funciona com qualquer repositório via env vars
+## Features
 
-## Sistema de Pontos
+- **Configurable Reputation**: Points system based on GitHub activity
+- **Auto-Close PRs**: Automatically closes PRs with score below threshold
+- **Direct Links**: All statistics link to filtered GitHub searches
+- **Smart Updates**: Only updates comments when new participants join
+- **100% Configurable**: Works with any repository via env vars
 
-| Ação | Pontos |
-|------|--------|
+## Points System
+
+| Action | Points |
+|--------|--------|
 | PR Merged | +20 |
-| PR Aberto | +3 |
-| PR Fechado (sem merge) | -10 |
-| Issue Criado | +5 |
-| Reactions positivas do Core | +15 |
-| Reactions negativas do Core | -50 |
+| PR Open | +3 |
+| PR Closed (without merge) | -10 |
+| Issue Created | +5 |
+| Core Team 👍 | +15 |
+| Core Team 👎 | -50 |
 
-> **Nota**: Scores podem ser negativos!
+> **Note**: Scores can be negative!
 
-## Configuração
+## Configuration
 
 ### Environment Variables
 
 ```bash
-# Obrigatórios
+# Required
 GITHUB_TOKEN=ghp_xxxxxxxxxxxxx          # Personal Access Token
-GITHUB_WEBHOOK_SECRET=your-secret        # Para verificar webhooks
+GITHUB_WEBHOOK_SECRET=your-secret        # Webhook signature verification
 
-# Opcionais (com defaults)
-REPO_NAME=owner/repo                     # Repositório monitorado
-CORE_TEAM_MEMBERS=user1,user2            # Lista de membros core
-REPUTATION_THRESHOLD=-80                 # Threshold para auto-fechar
-BOT_NAME=Reputation Bot                  # Nome do bot
-BOT_FOOTER="Gen by [Bot](link)"          # Footer dos comments
+# Optional (with defaults)
+REPO_NAME=owner/repo                     # Repository to monitor
+CORE_TEAM_MEMBERS=user1,user2            # Core team members list
+REPUTATION_THRESHOLD=-80                 # Threshold for auto-close
+BOT_NAME=Reputation Bot                  # Bot display name
+BOT_FOOTER="Gen by [Bot](link)"          # Comment footer
 ```
 
 ### GitHub Webhook
 
-Configure no Settings > Webhooks do seu repositório:
+Configure in Settings > Webhooks of your repository:
 
 - **Payload URL**: `https://your-bot-url/webhook`
 - **Content type**: `application/json`
-- **Secret**: Mesmo valor de `GITHUB_WEBHOOK_SECRET`
+- **Secret**: Same value as `GITHUB_WEBHOOK_SECRET`
 - **Events**: `pull_requests`, `issues`, `issue_comments`
 
 ## Deploy (Google Cloud Run)
@@ -67,7 +69,7 @@ gcloud run deploy reputation-bot \
   --set-env-vars="^@^GITHUB_TOKEN=TOKEN@GITHUB_WEBHOOK_SECRET=SECRET@CORE_TEAM_MEMBERS=user1@REPO_NAME=owner/repo"
 ```
 
-## Desenvolvimento Local
+## Local Development
 
 ```bash
 # Setup
@@ -86,21 +88,21 @@ python app.py
 python test_webhook.py
 ```
 
-## Estrutura do Projeto
+## Project Structure
 
 ```
 reputation-bot/
 ├── app.py              # Flask app + webhook handlers
-├── github_client.py    # Cliente GitHub API
-├── reputation.py       # Lógica de pontuação
+├── github_client.py    # GitHub API client
+├── reputation.py       # Scoring logic
 ├── Dockerfile          # Container
-├── requirements.txt    # Dependências
-├── install.sh          # Script de setup local
-├── deploy.sh           # Script de deploy GCR
-├── .env.example        # Template de variáveis
-└── SKILL.md            # Para OpenCLAW agents
+├── requirements.txt    # Dependencies
+├── install.sh          # Local setup script
+├── deploy.sh           # GCP deploy script
+├── .env.example        # Environment template
+└── SKILL.md            # For OpenCLAW agents
 ```
 
-## Para OpenCLAW Agents
+## For OpenCLAW Agents
 
-Este bot é designed para ser facilmente implementável como skill. Veja `SKILL.md` para instruções.
+This bot is designed to be easily implementable as a skill. See `SKILL.md` for instructions.
